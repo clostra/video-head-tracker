@@ -23,7 +23,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import io
 import os
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, FFMpegWriter
 
 logger = get_logger(__name__)
 
@@ -114,6 +114,8 @@ class FlameTracker:
 
         device = self._config["device"]
 
+        self._use_texture = self._config["w_photo"] != 0
+
         self._n_frames = n_frames
         self._calibrated = self._config["calibrated"]
         self._dataset = dataset
@@ -124,8 +126,11 @@ class FlameTracker:
         self._flame = FlameHead(n_shape, n_expr)
         self._flame.to(device)
 
-        self._flame_tex = FlameTex(n_tex)
-        self._flame_tex.to(device)
+        if self._use_texture:
+            self._flame_tex = FlameTex(n_tex)
+            self._flame_tex.to(device)
+        else:
+            self._flame_tex = None
 
         if self._config["ignore_lower_neck"]:
             self._face_mask = torch.ones(len(self._flame.faces), device=device).bool()
@@ -620,7 +625,10 @@ class FlameTracker:
         )
 
         verts, lmks = ret[0], ret[1]
-        albedos = self._flame_tex(self._texture[None, ...].expand(len(indices), -1))
+        if self._use_texture:
+            albedos = self._flame_tex(self._texture[None, ...].expand(len(indices), -1))
+        else:
+            albedos = torch.zeros((len(indices), 3, 512, 512)).to(verts)
         return verts, lmks, albedos
 
     def _rasterize_flame(self, sample, vertices, scale=1, use_cache=True):
@@ -834,9 +842,12 @@ class FlameTracker:
 
         E_lmk, E_eyes_lmk = self._compute_lmk_energy(frame_idx, sample, lmks)
 
-        E_photo = self._compute_photometric_energy(
-            sample, albedos, rasterization_results, step_i
-        )
+        if self._config["w_photo"] == 0:
+            E_photo = 0
+        else:
+            E_photo = self._compute_photometric_energy(
+                sample, albedos, rasterization_results, step_i
+            )
 
         E_shape, E_expr, E_tex = self._compute_regularization_energy(
             frame_idx, include_keyframes
@@ -1101,8 +1112,9 @@ class FlameTracker:
             interval=1000.0 / self._config["frame_rate"],
         )
         callback = lambda i, n: print(f"Saving frame {i} of {n}")
+        ffmpeg_writer = FFMpegWriter(fps=self._config["frame_rate"])
         os.makedirs(outpath.parent, exist_ok=True)
-        anim.save(outpath, progress_callback=callback)
+        anim.save(outpath, progress_callback=callback, writer=ffmpeg_writer)
         logger.info("Finished Animation")
         return anim
 
