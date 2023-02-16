@@ -16,11 +16,13 @@
 #
 # Contact: ps-license@tuebingen.mpg.de
 
-
+import vht
 from vht.model.lbs import lbs, vertices2landmarks
 from vht.util.graphics import face_vertices
 from vht.util.log import get_logger
 from pytorch3d.io import load_obj
+import os
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -30,11 +32,14 @@ import torch.nn.functional as F
 
 logger = get_logger(__name__)
 
-FLAME_MODEL_PATH = "assets/flame/generic_model.pkl"
-FLAME_MESH_PATH = "assets/flame/head_template_mesh.obj"
-FLAME_PARTS_PATH = "assets/flame/FLAME_masks.pkl"
-FLAME_LMK_PATH = "assets/flame/landmark_embedding_with_eyes.npy"
-FLAME_TEX_PATH = "assets/flame/FLAME_texture.npz"
+FLAME_ASSETS = "assets/flame"
+FLAME_MODEL_PATH = os.path.join(FLAME_ASSETS, 'generic_model.pkl')
+FLAME_MESH_MOUTH_PATH = os.path.join(FLAME_ASSETS, 'head_template_mesh_mouth.obj')
+FLAME_PARTS_PATH = os.path.join(FLAME_ASSETS, 'FLAME_masks.pkl')
+FLAME_LMK_PATH = os.path.join(FLAME_ASSETS, 'landmark_embedding_with_eyes.npy')
+FLAME_LOWER_NECK_FACES_PATH = os.path.join(FLAME_ASSETS, 'lower_neck_face_idcs.npy')
+FLAME_MESH_PATH = os.path.join(FLAME_ASSETS, "head_template_mesh.obj")
+FLAME_TEX_PATH = os.path.join(FLAME_ASSETS, "FLAME_texture.npz")
 
 
 def to_tensor(array, dtype=torch.float32):

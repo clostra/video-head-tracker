@@ -1,4 +1,4 @@
-from vht.model.flame import FlameHead, FlameTex
+from vht.model.flame import FlameHead, FlameTex, FLAME_ASSETS
 from vht.model.lbs import batch_rodrigues
 from vht.util.general import blur_tensors, DecayScheduler
 from vht.util.graphics import (
@@ -28,7 +28,7 @@ from matplotlib.animation import FuncAnimation, FFMpegWriter
 logger = get_logger(__name__)
 
 
-FLAME_LOWER_NECK_FACES_PATH = "assets/flame/lower_neck_face_idcs.npy"
+FLAME_LOWER_NECK_FACES_PATH = os.path.join(FLAME_ASSETS, "lower_neck_face_idcs.npy")
 
 
 def _to_batch(x, indices):
